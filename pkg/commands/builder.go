@@ -20,7 +20,7 @@ var buildCmd = &cobra.Command{
 		image, _ := cmd.Flags().GetString("image")
 		context, _ := cmd.Flags().GetString("context")
 
-		return BuildxBuild(registry, project, image, context)
+		return BuildContainerImage(registry, project, image, context)
 	},
 }
 
@@ -50,7 +50,7 @@ func ExecuteCommand(command string, args ...string) (string, error) {
 	return stdout.String(), nil
 }
 
-func GetGitCommit() (string, error) {
+func getCommitID() (string, error) {
 	output, err := ExecuteCommand("git", "log", "-n", "1", "--format=%h")
 	if err != nil {
 		return "", fmt.Errorf("failed to get git commit: %w", err)
@@ -58,7 +58,7 @@ func GetGitCommit() (string, error) {
 	return strings.TrimSpace(output), nil
 }
 
-func GetGitBranch() (string, error) {
+func getBranch() (string, error) {
 	output, err := ExecuteCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return "", fmt.Errorf("failed to get git branch: %w", err)
@@ -66,20 +66,20 @@ func GetGitBranch() (string, error) {
 	return strings.TrimSpace(output), nil
 }
 
-// BuildxBuild executes a multi-platform docker buildx build command
-func BuildxBuild(registryURL, project, imageName string, context string) error {
+// Function that executes dockerx build
+func BuildContainerImage(registryURL, project, imageName string, context string) error {
 	nyc, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		return fmt.Errorf("failed to load timezone: %w", err)
 	}
 	date := time.Now().In(nyc).Format("200601021504")
 
-	commit, err := GetGitCommit()
+	commit, err := getCommitID()
 	if err != nil {
 		return err
 	}
 
-	branch, err := GetGitBranch()
+	branch, err := getBranch()
 	if err != nil {
 		return err
 	}
@@ -94,10 +94,8 @@ func BuildxBuild(registryURL, project, imageName string, context string) error {
 	fmt.Printf("Building with stage: %s\n", stage)
 	fmt.Printf("Image tag generated: %s-%s-%s\n", date, commit, stage)
 
-	// Construct the full image tag
 	tag := fmt.Sprintf("%s/%s/%s:%s-%s-%s", registryURL, project, imageName, date, commit, stage)
 
-	// Execute buildx command
 	_, err = ExecuteCommand("docker", "buildx", "build",
 		"--platform", "linux/amd64,linux/arm64",
 		"-t", tag,
