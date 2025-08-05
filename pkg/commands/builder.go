@@ -35,7 +35,6 @@ func init() {
 	buildCmd.MarkFlagRequired("image")
 }
 
-// ExecuteCommand runs a system command and returns its output
 func ExecuteCommand(command string, args ...string) (string, error) {
 	cmd := exec.Command(command, args...)
 
@@ -51,7 +50,6 @@ func ExecuteCommand(command string, args ...string) (string, error) {
 	return stdout.String(), nil
 }
 
-// GetGitCommit returns the short hash of the latest commit
 func GetGitCommit() (string, error) {
 	output, err := ExecuteCommand("git", "log", "-n", "1", "--format=%h")
 	if err != nil {
@@ -60,7 +58,6 @@ func GetGitCommit() (string, error) {
 	return strings.TrimSpace(output), nil
 }
 
-// GetGitBranch returns the current branch name
 func GetGitBranch() (string, error) {
 	output, err := ExecuteCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
@@ -71,32 +68,27 @@ func GetGitBranch() (string, error) {
 
 // BuildxBuild executes a multi-platform docker buildx build command
 func BuildxBuild(registryURL, project, imageName string, context string) error {
-	// Get current time in NY timezone
 	nyc, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		return fmt.Errorf("failed to load timezone: %w", err)
 	}
 	date := time.Now().In(nyc).Format("200601021504")
 
-	// Get git commit
 	commit, err := GetGitCommit()
 	if err != nil {
 		return err
 	}
 
-	// Get branch name for logging
 	branch, err := GetGitBranch()
 	if err != nil {
 		return err
 	}
 
-	// Determine stage based on branch
 	stage := "development"
 	if branch == "main" {
 		stage = "release"
 	}
 
-	// Print build information
 	fmt.Printf("Building image from branch: %s\n", branch)
 	fmt.Printf("Building image with commit: %s\n", commit)
 	fmt.Printf("Building with stage: %s\n", stage)
