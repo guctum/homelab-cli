@@ -53,7 +53,7 @@ func ExecuteCommand(command string, args ...string) (string, error) {
 
 // GetGitCommit returns the short hash of the latest commit
 func GetGitCommit() (string, error) {
-	output, err := ExecuteCommand("git", "log", "-n", "1", "--format=%h7")
+	output, err := ExecuteCommand("git", "log", "-n", "1", "--format=%h")
 	if err != nil {
 		return "", fmt.Errorf("failed to get git commit: %w", err)
 	}
